@@ -20,7 +20,7 @@ function Profile() {
       
   }
   const HistoryDisplayFun = (e)=>{
-      console.log('shayan',e.value);
+      console.log('AleeBhai',e.value);
       setAccountDisplay('hidden')
       setHistoryDisplay('block')
   }

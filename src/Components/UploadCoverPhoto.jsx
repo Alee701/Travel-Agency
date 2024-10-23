@@ -18,7 +18,7 @@ function UploadCoverPhoto({value}) {
 
         <img src={profilepic} className='h-[120px]  rounded-[50%]' alt="" />
         <h1 className='text-[18px] font-semibold '>{value?.firstName + '' + value?.lastName}</h1>
-        <p className='text-[16px] font-medium opacity-[45%]'>{value?.Email}shayan</p>
+        <p className='text-[16px] font-medium opacity-[45%]'>{value?.Email}AleeBhai</p>
       </div>
     </div>
 
