@@ -1,40 +1,56 @@
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
-import { useAuthContext } from '../Context/Auth';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Link, useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import icons
+import '../App.css'; // Import custom CSS for animations
 
 function LoginForm() {
     const [LoginEmail, setLoginEmail] = useState('');
     const [LoginPassword, setLoginPassword] = useState('');
-    const { IsLoggedin, setIsLoggedin } = useAuthContext();
-    const [loading, setloading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false); // New state for show/hide password
-    const Navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false); // State for show/hide password
+    const [errors, setErrors] = useState({}); // Error state for validation
 
-    const handleLoginForm = (e) => {
+    const navigate = useNavigate();
+
+    const handleLoginForm = async (e) => {
         e.preventDefault();
-        const auth = getAuth();
-        setloading(true);
-        signInWithEmailAndPassword(auth, LoginEmail, LoginPassword)
-            .then((userCredential) => {
-                const user = userCredential.user;
-                console.log('User is Login');
-                toast.success('User is login successful');
-                setLoginEmail('');
-                setLoginPassword('');
-                setloading(false);
-                Navigate('/Profile');
-            })
-            .catch((error) => {
-                const errorMessage = error.message;
-                console.log(errorMessage);
-                toast.error(errorMessage);
-                setloading(false);
-            })
-            .finally(() => {
-                setloading(false);
-            });
+
+        // Reset errors before validation
+        setErrors({});
+
+        // Validate form fields
+        const newErrors = {};
+        if (!LoginEmail) newErrors.LoginEmail = "Email is required";
+        if (!LoginPassword) newErrors.LoginPassword = "Password is required";
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return; // Stop form submission if validation fails
+        }
+
+        try {
+            setLoading(true);
+
+            const auth = getAuth();
+            const userCredential = await signInWithEmailAndPassword(auth, LoginEmail, LoginPassword);
+            const user = userCredential.user;
+
+            toast.success("Login successful!");
+
+            // Reset form fields after successful login
+            setLoginEmail("");
+            setLoginPassword("");
+
+            // Navigate to profile page after successful login
+            navigate("/Profile");
+        } catch (error) {
+            console.error("Login Error:", error);
+            toast.error(error.message || "An error occurred during login.");
+        } finally {
+            setLoading(false); // Reset loading state in all cases
+        }
     };
 
     return (
@@ -46,46 +62,57 @@ function LoginForm() {
 
             <div id='insideLogin' className='flex flex-col gap-4 mt-4 w-full flex-wrap'>
 
-                <fieldset className='w-[130%] relative mt-5 h-[60px] flex items-center border px-5 rounded border-[#79747E]'>
+                {/* Email Field */}
+                <fieldset className={`w-[130%] h-[60px] relative flex items-center border px-5 rounded ${errors.LoginEmail ? 'border-red-500 animate-shake' : 'border-[#79747E]'}`}>
                     <legend>Email</legend>
                     <input
                         type="email"
                         value={LoginEmail}
-                        required
-                        onChange={(e) => setLoginEmail(e.target.value)}
+                        onChange={(e) => {
+                            setLoginEmail(e.target.value);
+                            setErrors({...errors, LoginEmail: ''});
+                        }}
                         className='w-full absolute mt-6 font-medium bg-transparent h-[45px] outline-none'
                     />
+                    {errors.LoginEmail && <p className="text-red-500 text-sm mt-1">{errors.LoginEmail}</p>}
                 </fieldset>
 
-                <fieldset className='w-[130%] h-[60px] relative flex items-center border px-5 rounded border-[#79747E]'>
+                {/* Password Field with Show/Hide */}
+                <fieldset className={`w-[130%] h-[60px] relative flex items-center border px-5 rounded ${errors.LoginPassword ? 'border-red-500 animate-shake' : 'border-[#79747E]'}`}>
                     <legend>Password</legend>
                     <input
-                        type={showPassword ? 'text' : 'password'} // Toggle input type
+                        type={showPassword ? 'text' : 'password'}
                         value={LoginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        className='w-full absolute mt-6 bg-transparent h-[45px] outline-none font-medium'
+                        onChange={(e) => {
+                            setLoginPassword(e.target.value);
+                            setErrors({...errors, LoginPassword: ''});
+                        }}
+                        className='w-full absolute mt-6 bg-transparent h-[45px] outline-none pr-10'
                     />
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)} // Toggle show/hide
-                        className='absolute right-3 top-2'
+                    <span
+                        onClick={() => setShowPassword(!showPassword)}
+                        className='absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer'
+                        style={{ fontSize: '1.2rem' }}
                     >
-                        {showPassword ? 'Hide' : 'Show'} {/* Display label based on state */}
-                    </button>
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </span>
+                    {errors.LoginPassword && <p className="text-red-500 text-sm mt-1">{errors.LoginPassword}</p>}
                 </fieldset>
 
-                <input
+                {/* Submit Button with Loading Animation */}
+                <button
                     type="submit"
-                    id='Loginupsubmit'
-                    value={loading ? 'login....' : 'Login'}
-                    className='h-[50px] cursor-pointer rounded mt-5 w-[130%] bg-[#8DD3BB] font-semibold'
-                />
+                    className='h-[50px] cursor-pointer rounded mt-5 w-[130%] bg-[#8DD3BB] font-semibold flex items-center justify-center'
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <div className="loader"></div> // Add a loader div for loading animation
+                    ) : 'Login'}
+                </button>
 
                 <p className='font-semibold w-[300px] text-[15px] text-end mt-2'>
-                    Don’t have an account?
-                    <Link to={'/signup'} className='text-[#FF8682]'>
-                        Sign up
-                    </Link>
+                    Don’t have an account? 
+                    <a href="/signup" className='text-[#FF8682]'> Sign up</a>
                 </p>
             </div>
         </form>
